@@ -5,7 +5,13 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
+const AuthRouter = require("./modules/auth/auth.routes");
+const UserRouter = require("./modules/user/user.routes");
+require("dotenv").config();
 const apiResponse = require('./utils/apiResponse');
+const notFound = require("./middlewares/notFound.middleware");
+const errorHandler = require("./middlewares/errorHandler.middleware");
+const asyncHandler = require("./utils/asyncHandler");
 
 const app = express();
 
