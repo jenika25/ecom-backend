@@ -1,10 +1,10 @@
-import { ROLES } from './roles.js';
-export const PERMISSIONS = {
+const { ROLES } = require('./roles');
+
+const PERMISSIONS = {
   [ROLES.ADMIN]: [
     'user:read:any', 'user:manage:any',
     'product:read', 'product:create', 'product:update:any', 'product:delete:any',
     'category:manage', 'brand:manage', 'banner:manage',
-    // An admin is also a person who can shop. Day 7 needs these.
     'cart:manage:own', 'wishlist:manage:own',
     'order:create', 'order:read:own', 'order:read:any',
     'return:create:own', 'return:manage:any',
@@ -29,7 +29,7 @@ export const PERMISSIONS = {
   ],
 };
 
-export const hasPermission = (role, required) => {
+const hasPermission = (role, required) => {
   const granted = PERMISSIONS[role] ?? [];
   return (
     granted.includes(required) ||
@@ -37,3 +37,5 @@ export const hasPermission = (role, required) => {
     granted.includes(`${required}:any`)
   );
 };
+
+module.exports = { PERMISSIONS, hasPermission };

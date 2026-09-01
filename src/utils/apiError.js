@@ -13,4 +13,12 @@ class ApiError extends Error {
   }
 }
 
-module.exports = ApiError;
+function createApiError(statusCode, message, errors = [], stack = "") {
+  return new ApiError(statusCode, message, errors, stack);
+}
+
+Object.setPrototypeOf(createApiError, ApiError);
+createApiError.prototype = ApiError.prototype;
+
+module.exports = createApiError;
+

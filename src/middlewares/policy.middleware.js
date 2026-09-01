@@ -1,3 +1,6 @@
+const apiError = require('../utils/apiError');
+const RETURN_WINDOW_MS = 2 * 24 * 60 * 60 * 1000;
+
 const sameId = (a, b) => String(a) === String(b);
 
 const POLICIES = {
@@ -42,9 +45,8 @@ const POLICIES = {
       actor.role === 'admin' ||
       order.items.some((item) => sameId(item.seller, actor._id)) ||
       'None of the items in this order are yours',
-                        
+
     createReturn: (actor, order, req) => {
-      
       if (!sameId(order.user, actor._id)) return 'This order is not yours';
 
       const item = order.items.id(req.params.itemId);
@@ -78,7 +80,7 @@ const POLICIES = {
   },
 };
 
- const policy = (action, model) => (req, _res, next) => {
+const policy = (action, model) => (req, _res, next) => {
   const rule = POLICIES[model]?.[action];
   if (!rule) throw apiError(500, `No policy defined for ${model}.${action}`);
 
@@ -93,5 +95,4 @@ const POLICIES = {
   next();
 };
 
-
-module.exports ={policy,POLICIES}
+module.exports = { policy, POLICIES };

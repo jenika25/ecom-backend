@@ -1,25 +1,25 @@
-const express = require("express");
-const { UserModel, RefreshTokenModel } = require("../../models/index1");
+const UserModel = require("../../models/user.model");
+const RefreshModel = require("../../models/refresh.model");
 const apiError = require("../../utils/apiError");
-const { hashPassword, comparePassword } = require("../../utils/password");
+const { NOT_FOUND, CONFLICT, UNAUTHORIZED } = require("../../utils/httpStatus");
+const { hashPassword, verifyPassword } = require("../../utils/password");
 const { signAccessToken, signRefreshToken } = require("../../utils/token");
+const jwt = require("jsonwebtoken");
 
 const registerService = async (data) => {
   const { name, email, password, role } = data;
 
   const isExist = await UserModel.findOne({ email });
   if (isExist) {
-    throw apiError(409, "user already exist");
+    throw apiError(CONFLICT, "User already exists");
   }
-  const hashedPassword = await hashPassword(password);
-  const userData = {
+
+  const user = await UserModel.create({
     name,
     email,
-    password: hashedPassword,
-    role: role,
-  };
-
-  const user = await UserModel.create(userData);
+    password,
+    role,
+  });
 
   const response = await UserModel.findById(user._id).select("-password");
   return { user: response };
@@ -34,7 +34,7 @@ const createRefreshService = async (data) => {
 
   const refreshData = await RefreshModel.create({
     user: userId,
-    token: token,
+    tokenHash: token,
     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   });
   return refreshData;
@@ -42,26 +42,34 @@ const createRefreshService = async (data) => {
 
 const loginService = async (data) => {
   const { email, password } = data;
-  const isUser = await UserModel.findOne({ email });
+  const isUser = await UserModel.findOne({ email }).select("+password");
   if (!isUser) {
-    throw apiError(409, "user already exist");
+    throw apiError(NOT_FOUND, "User not found");
   }
-  const compare = await comparePassword(password, isUser.password);
+  const compare = await isUser.isPasswordCorrectPlain(password);
   if (!compare) {
-    throw apiError(401, "user already exist");
+    throw apiError(UNAUTHORIZED, "Invalid credentials");
   }
   const response = await UserModel.findById(isUser._id).select("-password");
   return { user: response };
 };
 
 const logoutService = async (user) => {
-  await RefreshModel.deleteMany({
-    user: user.userID,
-  });
+  if (user && user._id) {
+    await RefreshModel.deleteMany({
+      user: user._id,
+    });
+  }
 };
 
-const refreshService = async () => {
+const refreshService = async (token) => {
+  if (!token) throw apiError(UNAUTHORIZED, "No refresh token provided");
+  const payload = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET || "technorefresh");
+  const user = await UserModel.findById(payload.sub);
+  if (!user) throw apiError(NOT_FOUND, "User not found");
 
+  const accessToken = signAccessToken(user);
+  return { accessToken, user };
 };
 
 const changePasswordService = async (data) => {
@@ -69,21 +77,21 @@ const changePasswordService = async (data) => {
   const user = await UserModel.findById(userId).select("+password");
 
   if (!user) {
-    throw apiError(NOT_FOUND, "user not found");
+    throw apiError(NOT_FOUND, "User not found");
   }
-  const decode = verifyPassword(oldPassword, user.password);
+  const isMatch = await user.isPasswordCorrectPlain(oldPassword);
 
-  if (!decode) {
-    throw apiError(NOT_FOUND, "Invalid password");
+  if (!isMatch) {
+    throw apiError(UNAUTHORIZED, "Invalid old password");
   }
-  const hashNewPassword = await hashPassword(newPassword);
 
-  user.password = hashNewPassword;
+  user.password = newPassword;
   await user.save();
+  return true;
 };
 
-const getUserDataById = async (data) => {
-  const user = await UserModel.findById(data);
+const getUserDataById = async (id) => {
+  const user = await UserModel.findById(id);
   return user;
 };
 

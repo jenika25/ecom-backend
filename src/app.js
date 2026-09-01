@@ -3,16 +3,18 @@ const compression = require('compression');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
+require("dotenv").config();
+
 const AuthRouter = require("./modules/auth/auth.routes");
 const UserRouter = require("./modules/user/user.routes");
-require("dotenv").config();
+const BrandRouter = require("./modules/brand/brand.routes");
+const CategoryRouter = require("./modules/category/category.routes");
+const ProductRouter = require("./modules/product/product.routes");
+
 const apiResponse = require('./utils/apiResponse');
 const notFound = require("./middlewares/notFound.middleware");
 const errorHandler = require("./middlewares/errorHandler.middleware");
-const asyncHandler = require("./utils/asyncHandler");
-const BrandRouter = require("./modules/brand/brand.routes");
 
 const app = express();
 
@@ -23,11 +25,12 @@ app.use(cookieParser());
 app.use(compression());
 app.use(morgan('dev'));
 
-app.use('/api/v1/auth', require('./modules/auth/auth.routes'));
-app.use('/api/v1/users', require('./modules/user/user.routes'));
-app.use("/api/v1/categories", CategoryRouter);
-app.use("/api/v1/brands", BrandRouter);
-app.use("/api/v1/products", ProductRouter);
+app.use('/api/v1/auth', AuthRouter);
+app.use('/api/v1/users', UserRouter);
+app.use('/api/v1/categories', CategoryRouter);
+app.use('/api/v1/brands', BrandRouter);
+app.use('/api/v1/products', ProductRouter);
+
 app.get('/api/v1/health', (_req, res) => {
   res.status(200).json(apiResponse(200, {
     service: 'ecom-backend',

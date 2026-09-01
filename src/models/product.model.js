@@ -53,7 +53,7 @@ productSchema.set("toObject", {
 });
 productSchema.pre("validate", function (next) {
   if (this.isModified("title") || !this.slug) {
-    this.slug = this.slug = convertToSlug(this.name) - nanoId();
+    this.slug = `${convertToSlug(this.title)}-${nanoId()}`;
   }
 
   next();
@@ -66,5 +66,6 @@ productSchema.pre("validate", function (next) {
   next();
 });
 
-module.exports = mongoose.model("Product", productSchema);
+const ProductModel = mongoose.models.Product || mongoose.model("Product", productSchema);
 module.exports = ProductModel;
+

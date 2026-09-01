@@ -1,14 +1,27 @@
-const apiResponse = require("../../utils/apiResponse");
-const asyncHandler = require("../../utils/asyncHandler");
-const { OK } = require("../../utils/httpStatus");
-const getOwnProfileService = require("./user.service");
+const apiError = require("../../utils/apiError");
+const { BAD_REQUEST } = require("../../utils/httpStatus");
 
-// User profile api services
-const getOwnProfileController = asyncHandler(async(req,res)=>{
+const validateCreateAddress = (req, _res, next) => {
+  const { fullName, phone, line1, city, state, pincode } = req.body;
 
-const userData = await getOwnProfileService(req.user._id);
+  if (!fullName || !phone || !line1 || !city || !state || !pincode) {
+    throw apiError(BAD_REQUEST, "fullName, phone, line1, city, state, and pincode are required");
+  }
 
-res.status(OK).json(apiResponse(OK,userData,"data fetch successfully"))
+  next();
+};
 
-})
-module.exports= { getOwnProfileController }
+const validateUpdateProfile = (req, _res, next) => {
+  const { name, phone } = req.body;
+
+  if (name !== undefined && (typeof name !== "string" || !name.trim())) {
+    throw apiError(BAD_REQUEST, "Name cannot be empty");
+  }
+
+  next();
+};
+
+module.exports = {
+  validateCreateAddress,
+  validateUpdateProfile,
+};

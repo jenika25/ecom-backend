@@ -9,24 +9,31 @@ const jwt = require('jsonwebtoken');
 
 exports.register = asyncHandler(async (req, res) => {
   const { name, email, password, role } = req.body;
-  const user = await User.create({ email, email1: email, password, role });
-  res.status(201).json(ApiResponse(201, user, "User registered successfully"));
+  const existingUser = await User.findOne({ email });
+  if (existingUser) throw ApiError(409, "User already exists");
+  const user = await User.create({ name, email, password, role });
+  const userJson = user.toObject();
+  delete userJson.password;
+  res.status(201).json(ApiResponse(201, userJson, "User registered successfully"));
 });
 
 exports.login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-  const user = await User.findOne({ email1: email }).select("+password");
-  if (!user) throw new ApiError(404, "User not found");
+  const user = await User.findOne({ email }).select("+password");
+  if (!user) throw ApiError(404, "User not found");
 
   const isMatch = await user.isPasswordCorrectPlain(password);
-  if (!isMatch) throw new ApiError(401, "Invalid credentials");
+  if (!isMatch) throw ApiError(401, "Invalid credentials");
 
   const accessToken = signAccessToken(user);
   const refreshToken = signRefreshToken(user);
 
-  res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: true });
-  res.status(200).json(ApiResponse(200, { accessToken, user }, "Login successful"));
+  res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: process.env.NODE_ENV === "production" });
+  const userJson = user.toObject();
+  delete userJson.password;
+  res.status(200).json(ApiResponse(200, { accessToken, user: userJson }, "Login successful"));
 });
+
 
 exports.refresh = asyncHandler(async (req, res) => {
   let token = req.cookies.refreshToken;

@@ -1,29 +1,37 @@
-
-const express = require('express');
-const { getMe, updateMe, getAddresses, setDefaultAddress, deleteAddress, getAllUsers, toggleActive, deleteUser } = require('./user.controller');
-const { protect, authorize } = require('../../middlewares/auth.middleware');
-const { upload } = require('../../middlewares/upload.middleware');
-const verifyImageType = require('../../middlewares/verifyImage');
+const express = require("express");
 const UserRouter = express.Router();
+const userController = require("./user.controller");
+const { protect, authorize } = require("../../middlewares/auth.middleware");
+const { upload } = require("../../middlewares/upload.middleware");
+const { validateCreateAddress, validateUpdateProfile } = require("./user.validator");
 
-UserRouter.use(validattionMiddleware);
+UserRouter.get("/me", protect, userController.getOwnProfileController);
 
-UserRouter.get("/me",userController.getOwnProfileController);
+UserRouter.patch(
+  "/me",
+  protect,
+  upload.single("profilePhoto"),
+  validateUpdateProfile,
+  userController.updateOwnProfileController
+);
 
-UserRouter.patch("/me",upload.single("profilePhoto"),userController.updateOwnProfileController);
+UserRouter.get("/me/addresses", protect, userController.getAllAddressesController);
 
-UserRouter.get("/me/addresses",userController.getAllAddressesController);
+UserRouter.post(
+  "/me/addresses",
+  protect,
+  validateCreateAddress,
+  userController.createAddressController
+);
 
-UserRouter.post("/me/addresses",userController.createAddressController);
+UserRouter.patch("/me/addresses/:addrId", protect, userController.updateAddressController);
 
-UserRouter.patch("/me/addresses/:addrId",userController.updateAddressController);
+UserRouter.delete("/me/addresses/:addrId", protect, userController.deleteAddressController);
 
-UserRouter.delete("/me/addresses/:addrId",userController.deleteAddressController);
+UserRouter.get("/", protect, authorize("admin"), userController.getAllusersController);
 
-UserRouter.patch("/:id/status",userController.updateUserStatusController);
+UserRouter.patch("/:id/status", protect, authorize("admin"), userController.updateUserStatusController);
 
-UserRouter.delete("/:id",userController.deleteUserController);
+UserRouter.delete("/:id", protect, authorize("admin"), userController.deleteUserController);
 
-UserRouter.get("/",userController.getAllusersController);
-
-module.exports= UserRouter;
+module.exports = UserRouter;
