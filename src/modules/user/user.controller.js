@@ -2,8 +2,9 @@ const asyncHandler = require("../../utils/asyncHandler");
 const ApiResponse = require("../../utils/apiResponse");
 const ApiError = require("../../utils/apiError");
 const User = require("../../models/user.model");
+const { OK, UNAUTHORIZED } = require("../../utils/httpStatus");
+const userServices = require("./user.service");
 
-// GET /users/me
 exports.getMe = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user.id);
   if (!user) throw new ApiError(404, "User not found");

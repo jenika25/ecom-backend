@@ -1,8 +1,13 @@
-
+const UserModel = require("../models/user.model");
+const { getUserDataById } = require("../modules/auth/auth.service");
 const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
 const ApiError = require('../utils/apiError');
+const apiResponse = require("../utils/apiResponse");
 const asyncHandler = require('../utils/asyncHandler');
+const { verifyAccessToken } = require("../utils/token");
+
+const { hasPermission } = require("../constants/permissions");
 
 exports.protect = asyncHandler(async (req, res, next) => {
   let token;

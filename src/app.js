@@ -12,6 +12,7 @@ const apiResponse = require('./utils/apiResponse');
 const notFound = require("./middlewares/notFound.middleware");
 const errorHandler = require("./middlewares/errorHandler.middleware");
 const asyncHandler = require("./utils/asyncHandler");
+const BrandRouter = require("./modules/brand/brand.routes");
 
 const app = express();
 
@@ -21,10 +22,12 @@ app.use(cors({ origin: process.env.CORS_ORIGIN || '*', credentials: true }));
 app.use(cookieParser());
 app.use(compression());
 app.use(morgan('dev'));
-// app.use(rateLimit());
 
 app.use('/api/v1/auth', require('./modules/auth/auth.routes'));
 app.use('/api/v1/users', require('./modules/user/user.routes'));
+app.use("/api/v1/categories", CategoryRouter);
+app.use("/api/v1/brands", BrandRouter);
+app.use("/api/v1/products", ProductRouter);
 app.get('/api/v1/health', (_req, res) => {
   res.status(200).json(apiResponse(200, {
     service: 'ecom-backend',
@@ -33,5 +36,8 @@ app.get('/api/v1/health', (_req, res) => {
     timestamp: new Date().toISOString(),
   }, 'API is running'));
 });
+
+app.use(notFound);
+app.use(errorHandler);
 
 module.exports = app;
